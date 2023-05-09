@@ -5,6 +5,7 @@
   "dependencies": {
     "@types/express": "^4.17.15",
     "body-parser": "^1.20.1",
+    "decimal.js-light": "^2.5.1",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
     "express-async-errors": "^3.1.1",
@@ -20,8 +21,8 @@
     "lint": "tsc --noEmit && eslint .",
     "lint:code": "eslint .",
     "lint:fix": "tsc --noEmit && eslint . --fix",
-    "migrate": "yarn run clean && yarn run build && env-cmd -f .env sequelize db:migrate",
-    "migrate:undo": "yarn run clean && yarn run build && env-cmd -f .env sequelize db:migrate:undo",
+    "migrate:up": "yarn run clean && yarn run build && env-cmd -f .env sequelize db:migrate",
+    "migrate:down": "yarn run clean && yarn run build && env-cmd -f .env sequelize db:migrate:undo",
     "migration:generate": "sequelize migration:generate --migrations-path src/migrations --name",
     "seed": "yarn run clean && yarn run build && env-cmd -f .env sequelize db:seed:all",
     "build": "tsc -p .",

@@ -1,11 +1,24 @@
 import { NextFunction, Request, Response } from 'express';
+import { AuthenticationError } from '../errors';
+import { Profile } from '../models/profile.model';
 
 export const getProfile = async (req: Request, res: Response, next: NextFunction) => {
-  const { Profile } = req.app.get('models');
-  const profile = await Profile.findOne({ where: { id: req.get('profile_id') || 0 } });
-  if (!profile) {
-    return res.status(401).end();
+  const profileId = req.get('profile_id');
+  if (!profileId) {
+    throw new AuthenticationError('Unauthorized');
   }
+
+  const profile = await Profile.findOne({
+    where: { id: profileId },
+    attributes: ['id', 'type'],
+    raw: true
+  });
+
+  if (!profile) {
+    throw new AuthenticationError('Unauthorized');
+  }
+
   req.profile = profile;
+
   next();
 };
