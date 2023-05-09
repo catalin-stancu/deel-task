@@ -1,0 +1,34 @@
+version: '3.5'
+
+services:
+  db:
+    image: postgres
+    environment:
+      POSTGRES_USER: ${DBUSERNAME}
+      POSTGRES_PASSWORD: ${DBPASSWORD}
+      PGDATA: /data/postgres
+      PGUSER: ${DBUSERNAME}
+      POSTGRES_DB: ${DBDATABASE}
+    volumes:
+      - deel-task-postgres-data:/data/postgres
+    ports:
+      - '5435:5432'
+    networks:
+      - deel-task
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}'
+        ]
+      interval: 1s
+      timeout: 5s
+      retries: 30
+
+networks:
+  deel-task:
+    driver: bridge
+
+volumes:
+  deel-task-postgres-data:
+    name: deel-task-postgres-data-volume
