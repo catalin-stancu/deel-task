@@ -1,12 +1,12 @@
-import { Op } from 'sequelize';
+import Decimal from 'decimal.js-light';
+import { Op, QueryTypes } from 'sequelize';
 import { Service } from 'typedi';
-import Decimal, { Numeric } from 'decimal.js-light';
 
 import { CONTRACT_STATUS } from '../enums/enums';
+import { ConflictError, MissingDataError, ValidationError } from '../errors';
 import { Contract } from '../models/contract.model';
 import { Job } from '../models/job.model';
 import { Profile } from '../models/profile.model';
-import { ConflictError, MissingDataError, ValidationError } from '../errors';
 import { sequelize } from '../server';
 
 type UnpaidJob = Omit<Job, 'ContractId'>
@@ -21,6 +21,10 @@ type PaidJob = {
     newContractorBalance: string
     oldContractorBalance: string
   }
+}
+
+interface AggProfile extends Profile {
+  total: number
 }
 
 @Service()
@@ -49,7 +53,7 @@ export default class ContractService {
               model: Profile,
               as: 'Contractor',
               attributes: ['id', 'firstName', 'lastName']
-            },
+            }
           ],
           required: true
         }
@@ -81,7 +85,7 @@ export default class ContractService {
                 model: Profile,
                 as: 'Contractor',
                 attributes: ['id', 'balance']
-              },
+              }
             ],
             required: true
           }
@@ -137,5 +141,107 @@ export default class ContractService {
         }
       };
     });
+  }
+
+  async getBestProfession(start: string, end: string) {
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    startDate.setUTCHours(0, 0, 0, 0);
+    endDate.setUTCHours(23, 59, 59, 999);
+
+    const profiles = await Profile.findAll({
+      attributes: [
+        'profession',
+        [sequelize.literal('SUM("contractorContracts->Jobs".price)'), 'total']
+      ],
+      include: [
+        {
+          model: Contract,
+          as: 'contractorContracts',
+          attributes: [],
+          required: true,
+          include: [
+            {
+              model: Job,
+              where: {
+                paid: true,
+                paymentDate: {
+                  [Op.gte]: startDate,
+                  [Op.lte]: endDate
+                }
+              },
+              required: true,
+              attributes: []
+            }
+          ]
+        }
+      ],
+      group: ['Profile.id', 'Profile.profession'],
+      order: [['total', 'DESC']]
+    });
+
+    if (!profiles.length) {
+      throw new MissingDataError('No best professions found in this time range!');
+    }
+
+    // At this point we've obtained the sum of paid jobs for each contractor
+    // And we need to see which profession was the best paid
+
+    const bestProfessions: {[key: string]: Decimal} = profiles.reduce((map, profile) => {
+      const { profession, total } = profile.toJSON() as AggProfile;
+
+      if (!map[profession]) {
+        map[profession] = new Decimal(total);
+      } else {
+        map[profession] = map[profession].add(total);
+      }
+      return map;
+    }, {});
+
+    const sortedProfessions = Object.entries(bestProfessions).sort((a, b) => {
+      const [, firstValue] = a;
+      const [, secondValue] = b;
+
+      return secondValue.sub(firstValue).toNumber();
+    });
+
+    const [profession, total] = sortedProfessions[0];
+    return {
+      profession,
+      total: total.toFixed(2)
+    };
+  }
+
+  async getBestProfessionWithRawQuery(start: string, end: string) {
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    startDate.setUTCHours(0, 0, 0, 0);
+    endDate.setUTCHours(23, 59, 59, 999);
+
+    const bestProfessions = await sequelize.query(
+      `SELECT profession, SUM(total) as total FROM (
+          SELECT p.id, p.profession, SUM(j.price) AS total
+          FROM "Profiles" AS p
+          INNER JOIN "Contracts" AS c ON p.id = c."ContractorId"
+          INNER JOIN "Jobs" AS j ON c.id = j."ContractId"
+          AND j.paid = true
+          AND j."paymentDate" >= :startDate
+          AND j."paymentDate" <= :endDate
+          GROUP BY p.id ) as temp
+        GROUP BY profession
+        ORDER BY total DESC 
+        LIMIT 1`, {
+        replacements: {
+          startDate,
+          endDate
+        },
+        type: QueryTypes.SELECT
+      });
+
+    if (!bestProfessions.length) {
+      throw new MissingDataError('No best professions found in this time range!');
+    }
+
+    return bestProfessions[0];
   }
 }

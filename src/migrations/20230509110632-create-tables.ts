@@ -27,6 +27,11 @@ module.exports = {
       type: {
         type: Sequelize.ENUM('client', 'contractor'),
         allowNull: false
+      },
+      version: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        defaultValue: 0
       }
     }, { transaction });
 

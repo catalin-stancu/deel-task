@@ -1,6 +1,8 @@
 export default class ConflictError extends Error {
   name: string;
+
   cause?: Error;
+
   stack?: string;
 
   constructor(msg: string, cause?: Error) {

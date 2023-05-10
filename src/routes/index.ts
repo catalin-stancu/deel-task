@@ -1,10 +1,14 @@
 import { Router } from 'express';
-import contractsRouter from './contractsRouter';
-import jobsRouter from './jobsRouter';
+import contractRouter from './contractRouter';
+import jobRouter from './jobRouter';
+import balanceRouter from './balanceRouter';
+import adminRouter from './adminRouter';
 
 const router = Router({ caseSensitive: false });
 
-router.use(contractsRouter);
-router.use(jobsRouter);
+router.use(contractRouter);
+router.use(jobRouter);
+router.use(balanceRouter);
+router.use(adminRouter);
 
 export default router;

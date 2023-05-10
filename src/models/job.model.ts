@@ -7,35 +7,35 @@ export class Job extends Model {
     @PrimaryKey
     @AllowNull(false)
     @Column({
-        type: DataType.INTEGER,
-        autoIncrement: true
+      type: DataType.INTEGER,
+      autoIncrement: true
     })
-    id: number;
+      id: number;
 
     @AllowNull(false)
     @Column({ type: DataType.TEXT })
-    description: string;
+      description: string;
 
     @AllowNull(false)
     @Column({ type: DataType.DECIMAL(12, 2) })
-    price: string;
+      price: string;
 
     @AllowNull(true)
     @Column({
-        type: DataType.BOOLEAN,
-        defaultValue: false
+      type: DataType.BOOLEAN,
+      defaultValue: false
     })
-    paid?: boolean;
+      paid?: boolean;
 
     @AllowNull(true)
     @Column({ type: DataType.DATE })
-    paymentDate?: Date;
+      paymentDate?: Date;
 
     @AllowNull(false)
     @ForeignKey(() => Contract)
     @Column({ type: DataType.INTEGER })
-    ContractId: number;
+      ContractId: number;
 
     @BelongsTo(() => Contract)
-    Contract: Contract;
+      Contract: Contract;
 }

@@ -9,35 +9,35 @@ export class Contract extends Model {
     @PrimaryKey
     @AllowNull(false)
     @Column({
-        type: DataType.INTEGER,
-        autoIncrement: true
+      type: DataType.INTEGER,
+      autoIncrement: true
     })
-    id: number;
+      id: number;
 
     @AllowNull(false)
     @Column({ type: DataType.TEXT })
-    terms: string;
+      terms: string;
 
     @AllowNull(false)
     @Column({ type: DataType.ENUM(CONTRACT_STATUS.NEW, CONTRACT_STATUS.IN_PROGRESS, CONTRACT_STATUS.TERMINATED) })
-    status: CONTRACT_STATUS;
+      status: CONTRACT_STATUS;
 
     @AllowNull(false)
     @ForeignKey(() => Profile)
     @Column({ type: DataType.INTEGER })
-    ClientId: number;
+      ClientId: number;
 
     @AllowNull(false)
     @ForeignKey(() => Profile)
     @Column({ type: DataType.INTEGER })
-    ContractorId: number;
+      ContractorId: number;
 
     @BelongsTo(() => Profile, 'ClientId')
-    Client: Profile;
+      Client: Profile;
 
     @BelongsTo(() => Profile, 'ContractorId')
-    Contractor: Profile;
+      Contractor: Profile;
 
     @HasMany(() => Job, 'ContractId')
-    Jobs: Job[];
+      Jobs: Job[];
 }
