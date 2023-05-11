@@ -2,7 +2,7 @@ import Decimal from 'decimal.js-light';
 import { Op, QueryTypes } from 'sequelize';
 import { Service } from 'typedi';
 
-import { CONTRACT_STATUS } from '../enums/enums';
+import { CONTRACT_STATUS, PROFILE_TYPE } from '../enums/enums';
 import { ConflictError, MissingDataError, ValidationError } from '../errors';
 import { Contract } from '../models/contract.model';
 import { Job } from '../models/job.model';
@@ -143,13 +143,22 @@ export default class ContractService {
     });
   }
 
-  async getBestProfession(start: string, end: string) {
+  getQueryDates(start: string, end: string) {
     const startDate = new Date(start);
     const endDate = new Date(end);
     startDate.setUTCHours(0, 0, 0, 0);
     endDate.setUTCHours(23, 59, 59, 999);
 
+    return { startDate, endDate };
+  }
+
+  async getBestProfession(start: string, end: string) {
+    const { startDate, endDate } = this.getQueryDates(start, end);
+
     const profiles = await Profile.findAll({
+      where: {
+        type: PROFILE_TYPE.CONTRACTOR
+      },
       attributes: [
         'profession',
         [sequelize.literal('SUM("contractorContracts->Jobs".price)'), 'total']
@@ -176,7 +185,7 @@ export default class ContractService {
           ]
         }
       ],
-      group: ['Profile.id', 'Profile.profession'],
+      group: ['Profile.id'],
       order: [['total', 'DESC']]
     });
 
@@ -213,10 +222,7 @@ export default class ContractService {
   }
 
   async getBestProfessionWithRawQuery(start: string, end: string) {
-    const startDate = new Date(start);
-    const endDate = new Date(end);
-    startDate.setUTCHours(0, 0, 0, 0);
-    endDate.setUTCHours(23, 59, 59, 999);
+    const { startDate, endDate } = this.getQueryDates(start, end);
 
     const bestProfessions = await sequelize.query(
       `SELECT profession, SUM(total) as total FROM (
@@ -227,13 +233,15 @@ export default class ContractService {
           AND j.paid = true
           AND j."paymentDate" >= :startDate
           AND j."paymentDate" <= :endDate
+          WHERE p.type = :type
           GROUP BY p.id ) as temp
         GROUP BY profession
         ORDER BY total DESC 
         LIMIT 1`, {
         replacements: {
           startDate,
-          endDate
+          endDate,
+          type: PROFILE_TYPE.CONTRACTOR
         },
         type: QueryTypes.SELECT
       });
@@ -243,5 +251,51 @@ export default class ContractService {
     }
 
     return bestProfessions[0];
+  }
+
+  async getBestClients(start: string, end: string, limit: number) {
+    const { startDate, endDate } = this.getQueryDates(start, end);
+
+    const bestClients = await Profile.findAll({
+      where: {
+        type: PROFILE_TYPE.CLIENT
+      },
+      attributes: [
+        'id', 'firstName', 'lastName', 'profession',
+        [sequelize.literal('SUM("clientContracts->Jobs".price)'), 'total']
+      ],
+      include: [
+        {
+          model: Contract,
+          as: 'clientContracts',
+          attributes: [],
+          required: true,
+          include: [
+            {
+              model: Job,
+              where: {
+                paid: true,
+                paymentDate: {
+                  [Op.gte]: startDate,
+                  [Op.lte]: endDate
+                }
+              },
+              required: true,
+              attributes: []
+            }
+          ]
+        }
+      ],
+      group: ['Profile.id'],
+      order: [['total', 'DESC']],
+      limit,
+      subQuery: false // We need this flag, otherwise sequelize will add the limit inside the subquery and it won't work
+    });
+
+    if (!bestClients.length) {
+      throw new MissingDataError('No best clients found in this time range!');
+    }
+
+    return bestClients;
   }
 }

@@ -21,3 +21,9 @@ const endDateSchema = query('end', 'End date should be a valid date [YYYY-MM-DD]
   .custom((startDate, { req }) => startEndCompare(startDate, req.body.endDate));
 
 export const bestProfessionSchema = [startDateSchema, endDateSchema];
+
+export const bestClientsSchema = [
+  startDateSchema,
+  endDateSchema,
+  query('limit', 'Limit must be a valid positive number').optional().isInt({ min: 1, max: 100 }).toInt()
+];

@@ -27,14 +27,19 @@ contractor get paid for jobs by clients under a certain contract.
 ## Getting Set Up
 
 The exercise requires [Node.js](https://nodejs.org/en/) to be installed. We recommend using the LTS version.
+You will also need Docker Desktop, for running the Postgres image I have set up
 
 1. Start by creating a local repository for this folder.
 
-1. In the repo root directory, run `npm install` to gather all dependencies.
+2. In the repo root directory, run `npm install` to gather all dependencies.
 
-1. Next, `npm run seed` will seed the local SQLite database. **Warning: This will drop the database if it exists**. The database lives in a local file `database.sqlite3`.
+3. In the repo root directory, run `docker-compose up -d db` to spin up a Postgres database inside a docker container
 
-1. Then run `npm start` which should start both the server and the React client.
+4. Next, `npm run migrate:up` will run the migrations which will create the table schemas
+
+5. Next, `npm run seed` will seed the Postgres database.
+
+6. Then run `npm start` which should start both the server and the React client.
 
 ❗️ **Make sure you commit all changes to the master branch!**
 

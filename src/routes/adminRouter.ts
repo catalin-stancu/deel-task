@@ -3,7 +3,7 @@ import { Request, Response, Router } from 'express';
 import { getProfile } from '../middleware/getProfile';
 import validate from '../middleware/validations';
 import { jobService } from '../services';
-import { bestProfessionSchema } from '../validations/admin';
+import { bestClientsSchema, bestProfessionSchema } from '../validations/admin';
 
 const router = Router({ caseSensitive: false });
 
@@ -22,6 +22,19 @@ router.get('/admin/best-profession',
       bestProfessionSequelize,
       bestProfessionRawQuery
     });
+  }
+);
+
+router.get('/admin/best-clients',
+  getProfile,
+  validate(bestClientsSchema),
+  async (req: Request, res: Response) => {
+    const { start, end, limit = 2 } = req.query;
+    return res.send(await jobService.getBestClients(
+        start as string,
+        end as string,
+        Number(limit)
+    ));
   }
 );
 
