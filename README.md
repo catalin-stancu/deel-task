@@ -33,13 +33,15 @@ You will also need Docker Desktop, for running the Postgres image I have set up
 
 2. In the repo root directory, run `npm install` to gather all dependencies.
 
-3. In the repo root directory, run `docker-compose up -d db` to spin up a Postgres database inside a docker container
+3. Create a `.env` file with all the required env variables. In this specific case you can rename the `.env.example` to `.env`.
 
-4. Next, `npm run migrate:up` will run the migrations which will create the table schemas
+4. In the repo root directory, run `docker-compose up -d db` to spin up a Postgres database inside a docker container
 
-5. Next, `npm run seed` will seed the Postgres database.
+5. Next, `npm run migrate:up` will run the migrations which will create the table schemas
 
-6. Then run `npm start` which should start both the server and the React client.
+6. Next, `npm run seed` will seed the Postgres database.
+
+7. Then run `npm start` which should start both the server and the React client.
 
 ❗️ **Make sure you commit all changes to the master branch!**
 
